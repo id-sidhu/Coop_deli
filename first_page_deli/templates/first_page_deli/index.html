@@ -7,10 +7,10 @@
 
 {% block body %}
     <h1>Deli</h1>
-    <form action="" method="get">
-        <input type="text" name="query" placeholder="Search">
+    <form action="{% url 'search_view' %}" method="get">
+        <input type="text" name="q" placeholder="Search">
         <button type="submit">Search</button>
-    </form>
+    </form>    
 <!--
     <div id="Shelf Inventory" class="section">
         <h2>Shelf Inventory</h2>
@@ -46,9 +46,9 @@
     <div id="Pizzas" class="section">
         <h2>Pizzas</h2>
         <ul>
-            <li><a href="{% url 'shelf_detail_view' shelf_name='Pizzas' %}">Hawaiian</a></li>
-            <li><a href="{% url 'shelf_detail_view' shelf_name='Pizzas' %}">Margherita</a></li>
-            <li><a href="{% url 'shelf_detail_view' shelf_name='Pizzas' %}">Pepperoni</a></li>
+            <li><a href="{% url 'shelf_detail_view' shelf_name='Pizza' %}">Hawaiian</a></li>
+            <li><a href="{% url 'shelf_detail_view' shelf_name='Pizza' %}">Margherita</a></li>
+            <li><a href="{% url 'shelf_detail_view' shelf_name='Pizza' %}">Pepperoni</a></li>
             <li><a href="{% url 'build_your_own_pizza' %}">Build Your Own</a></li>
         </ul>
     </div>

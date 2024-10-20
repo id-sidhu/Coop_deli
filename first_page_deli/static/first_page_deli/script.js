@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const targetId = this.getAttribute('href').substring(1);
             const targetElement = document.getElementById(targetId);
             window.scrollTo({
-                top: targetElement.offsetTop,
+                top: targetElement.offsetTop - 60, // Adjust for sticky header
                 behavior: 'smooth'
             });
         });
@@ -15,14 +15,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Interactive form validation
     const form = document.querySelector('form');
-    const input = form.querySelector('input[type="text"]');
+    const inputs = form.querySelectorAll('input, select, textarea');
 
     form.addEventListener('submit', function(event) {
-        if (input.value.trim() === '') {
+        let formIsValid = true;
+
+        inputs.forEach(input => {
+            if (input.value.trim() === '' && input.hasAttribute('required')) {
+                formIsValid = false;
+                input.style.borderColor = 'red';
+                input.nextElementSibling.textContent = 'This field is required';
+                input.nextElementSibling.style.color = 'red';
+            } else {
+                input.style.borderColor = '#c0392b';
+                if (input.nextElementSibling) {
+                    input.nextElementSibling.textContent = '';
+                }
+            }
+        });
+
+        if (!formIsValid) {
             event.preventDefault();
-            input.style.borderColor = 'red';
-        } else {
-            input.style.borderColor = '#c0392b';
         }
+    });
+
+    // Real-time input validation
+    inputs.forEach(input => {
+        input.addEventListener('input', () => {
+            if (input.value.trim() === '' && input.hasAttribute('required')) {
+                input.style.borderColor = 'red';
+            } else {
+                input.style.borderColor = '#c0392b';
+            }
+        });
     });
 });

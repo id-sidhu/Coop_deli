@@ -19,5 +19,5 @@ from django.urls import path, include
 from first_page_deli.admin import coop_deli_admin_site
 urlpatterns = [
     path('admin/', coop_deli_admin_site.urls),
-    path('deli/', include('first_page_deli.urls'))
+    path('', include('first_page_deli.urls'))
 ]

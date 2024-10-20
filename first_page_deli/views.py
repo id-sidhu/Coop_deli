@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Q
 from django.views import generic
 from .models import *
 
@@ -8,7 +9,6 @@ def index(request):
     return render(request, "first_page_deli/index.html")
     
 def shelf_detail_view(request, shelf_name):
-    # Fetch all items from the HotCase model
 
     model_map = {
         "HotCase": HotCase,
@@ -25,7 +25,7 @@ def shelf_detail_view(request, shelf_name):
         "Pasta": Pasta,
         "Dips": Dips,
         "CheeseBoard": CheeseBoard,
-        "Pizzas": Pizza,
+        "Pizza": Pizza,
     }
 
     model = model_map.get(shelf_name)
@@ -87,11 +87,11 @@ def payment_placeholder(request, order_id):
 # views.py
 
 def build_your_own_pizza(request):
-    crusts = PizzaCrust.objects.all()
-    sizes = PizzaSize.objects.all()
-    sauces = PizzaSauce.objects.all()
+    crusts = crust_choices
+    sizes = size_choices
+    sauces = sauce_choices
     meats = PizzaMeat.objects.all()
-    cheeses = PizzaCheese.objects.all()
+    cheeses = cheese_choices
     toppings = PizzaToppings.objects.all()
 
     context = {
@@ -104,32 +104,66 @@ def build_your_own_pizza(request):
     }
 
     if request.method == "POST":
-        crust = get_object_or_404(PizzaCrust, id=request.POST.get('crust'))
-        size = get_object_or_404(PizzaSize, id=request.POST.get('size'))
-        sauce = get_object_or_404(PizzaSauce, id=request.POST.get('sauce'))
+        # Get pizza details from form submission
+        crust = request.POST.get('crust')
+        size = request.POST.get('size')
+        sauce = request.POST.get('sauce')
         meats = request.POST.getlist('meats')
         cheeses = request.POST.getlist('cheese')
         toppings = request.POST.getlist('toppings')
         quantity = int(request.POST.get('quantity', 1))
 
-        # Create a new Pizza instance (or fetch an existing one)
-        pizza = Pizza.objects.create(
+        # Get customer information from form submission
+        customer_name = request.POST.get('customer_name')
+        phone_number = request.POST.get('phone_number')
+        email = request.POST.get('email')
+
+        # Calculate the base price of the pizza
+        base_price = 17.99  # You can adjust this or calculate based on selections
+        total_price = base_price * quantity
+
+        # Create a new OrderPizza instance and set fields
+        order = OrderPizza.objects.create(
             crust=crust,
             size=size,
             sauce=sauce,
-            price=10
-        )
-        pizza.meat.set(meats)
-        pizza.cheese.set(cheeses)
-        pizza.toppings.set(toppings)
-        
-        # Create a new order
-        total_price = pizza.price * quantity
-        order = OrderPizza.objects.create(
-            product_ordered=pizza,
+            cheese=','.join(cheeses),
+            price=base_price,
             quantity_ordered=quantity,
-            total_price=total_price
+            total_price=total_price,
+            customer_name=customer_name,
+            phone_number=phone_number,
+            email=email
         )
+
+        # Set many-to-many relationships
+        order.meat.set(meats)
+        order.toppings.set(toppings)
+
+        # Redirect to the payment page or another relevant page
         return redirect('payment_placeholder', order_id=order.id)
 
     return render(request, 'first_page_deli/BYOPizza.html', context)
+
+def search_view(request):
+    query = request.GET.get('q')  # Get the search query from the request
+    results = []
+
+    if query:
+        # List of models to search across
+        models_to_search = [
+            Pizza,
+        ]
+
+        # Search each model for the query in relevant fields
+        for model in models_to_search:
+            model_results = model.objects.filter(
+                Q(item_name__icontains=query) | Q(crust__icontains=query) | Q(cheese__icontains=query) 
+                | Q(sauce__icontains=query) 
+            )
+            results.extend(model_results)
+
+    return render(request, 'first_page_deli/search_results.html', {
+        'query': query,
+        'results': results
+    })

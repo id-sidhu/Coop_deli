@@ -10,4 +10,5 @@ urlpatterns = [
     path('order/<int:product_id>/', views.place_order, name='place_order'),
     path('payment/placeholder/<int:order_id>/', views.payment_placeholder, name='payment_placeholder'),  # Corrected here
     path('shelf/BYOPizza/', views.build_your_own_pizza, name='build_your_own_pizza'),
+    path('search/', views.search_view, name='search_view'),
 ]

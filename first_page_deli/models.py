@@ -24,6 +24,9 @@ class BaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     plu = models.IntegerField(default = -1)
+
+    def get_class_name(self):
+        return self.__class__.__name__
     
 class HotCase(BaseModel):
 
@@ -116,12 +119,6 @@ class CheeseBoard(BaseModel):
     def __str__(self):
         return self.item_name
     
-class PizzaSize(models.Model):
-    pizza_size = models.IntegerField(blank=False)
-
-    def __str__(self):
-        return str(self.pizza_size) + ' "'
-
 class PizzaMeat(models.Model):
     meat_name = models.CharField(max_length=128)
 
@@ -134,45 +131,54 @@ class PizzaToppings(models.Model):
     def __str__(self):
         return self.topping_name
 
-class PizzaSauce(models.Model):
-    sauce_name = models.CharField(max_length=128)
+crust_choices = [
+    ('reg', 'Regular'),
+    ('gl_free', 'Gluten Free'),
+]
 
-    def __str__(self):
-        return self.sauce_name
+sauce_choices = [
+    ('mar', 'Marinara'),
+    ('alf', 'Alfredo')
+]
 
-class PizzaCheese(models.Model):
-    cheese_name = models.CharField(max_length=128)
+size_choices = [
+    ('8', '8'),
+    ('13', '13')
+]
 
-    def __str__(self):
-        return self.cheese_name
-
-class PizzaCrust(models.Model):
-    crust_type = models.CharField(max_length=128)
-
-    def __str__(self):
-        return self.crust_type
+cheese_choices = [
+    ('moz', 'Mozzarella'),
+    ('ched', 'Cheddar'),
+    ('cmoz', 'Cubed Mozzarella')
+]
 
 class Pizza(models.Model):
     item_name = models.CharField(max_length=128)
     category = models.ManyToManyField(Category, blank=True)
-    crust = models.ForeignKey(PizzaCrust, on_delete=models.CASCADE)
-    size = models.ForeignKey(PizzaSize, on_delete=models.CASCADE, blank=False, default=13)
-    price = models.DecimalField(max_digits=5, decimal_places=2)
-    sauce = models.ForeignKey(PizzaSauce, on_delete=models.CASCADE)
+    crust = models.CharField(max_length=16, choices=crust_choices, default='reg')
+    size = models.CharField(choices=size_choices, max_length=4, default=13)
+    price = models.DecimalField(max_digits=5, decimal_places=2, blank=True)
+    sauce = models.CharField(max_length=16, choices=sauce_choices, default='mar')
     meat = models.ManyToManyField(PizzaMeat, blank=True)
-    cheese = models.ManyToManyField(PizzaCheese, blank=False)
-    toppings = models.ManyToManyField(PizzaToppings, blank=False)
+    cheese = models.CharField(max_length=16, choices=cheese_choices, default='moz')
+    toppings = models.ManyToManyField(PizzaToppings, blank=True)
 
     def __str__(self):
         return self.item_name
+    
+    def get_class_name(self):
+        return self.__class__.__name__
 
 class BYOPizza(models.Model):
-    crust = forms.ModelChoiceField(queryset=PizzaCrust.objects.all(), label = 'Choose Crust')
-    size = forms.ModelChoiceField(queryset=PizzaSize.objects.all(), label="Choose Size")
-    sauce = forms.ModelChoiceField(queryset=PizzaSauce.objects.all(), label="Choose Sauce")
+    crust = forms.ChoiceField(choices=crust_choices, label = 'Choose Crust', initial='reg')
+    size = forms.ChoiceField(choices=size_choices, label = 'Choose Size', initial=13)
+    sauce = forms.ChoiceField(choices=sauce_choices, label = 'Choose Sauce', initial='mar')
     meats = forms.ModelMultipleChoiceField(queryset=PizzaMeat.objects.all(), widget=forms.CheckboxSelectMultiple, required=False, label="Select Meats")
-    cheese = forms.ModelMultipleChoiceField(queryset=PizzaCheese.objects.all(), widget=forms.CheckboxSelectMultiple, label="Select Cheese")
+    cheese = forms.MultipleChoiceField(choices=cheese_choices, widget=forms.CheckboxSelectMultiple, label="Select Cheese")
     toppings = forms.ModelMultipleChoiceField(queryset=PizzaToppings.objects.all(), widget=forms.CheckboxSelectMultiple, label="Select Toppings")
+
+    def get_class_name(self):
+        return self.__class__.__name__
 
 class OnSaleMeats(models.Model):
     on_sale_meats = models.ManyToManyField(ServiceCaseMeats, blank=True)
@@ -189,10 +195,22 @@ class OnSaleSalads(models.Model):
     #  Online Ordering
 
 class OrderPizza(models.Model):
-    product_ordered = models.ForeignKey(Pizza, on_delete = models.CASCADE)
-    quantity_ordered = models.PositiveIntegerField(default = 1)
+    # Pizza details
+    crust = models.CharField(max_length=16, choices=crust_choices, default='reg')
+    size = models.CharField(max_length=4, choices=size_choices, default='13')
+    sauce = models.CharField(max_length=16, choices=sauce_choices, default='mar')
+    meat = models.ManyToManyField(PizzaMeat, blank=True)
+    cheese = models.CharField(max_length=255)  # Store cheese as a comma-separated string
+    toppings = models.ManyToManyField(PizzaToppings, blank=True)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+
+    # Order details
+    quantity_ordered = models.PositiveIntegerField(default=1)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    customer_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Order of {self.product_ordered.item_name}"
+        return f"Order of {self.customer_name} - {self.quantity_ordered} pizza(s)"
